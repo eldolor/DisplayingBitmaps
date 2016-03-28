@@ -32,6 +32,7 @@ import com.cm.android.common.logger.Log;
 import com.cm.android.displayingbitmaps.BuildConfig;
 
 import java.lang.ref.WeakReference;
+import java.util.List;
 
 /**
  * This class wraps up completing some arbitrary long running work when loading a bitmap to an
@@ -69,9 +70,9 @@ public abstract class ImageWorker {
      * image is found in the memory cache, it is set immediately, otherwise an {@link AsyncTask}
      * will be created to asynchronously load the bitmap.
      *
-     * @param data The URL of the image to download.
+     * @param data      The URL of the image to download.
      * @param imageView The ImageView to bind the downloaded image to.
-     * @param listener A listener that will be called back once the image has been loaded.
+     * @param listener  A listener that will be called back once the image has been loaded.
      */
     public void loadImage(Object data, ImageView imageView, OnImageLoadedListener listener) {
         if (data == null) {
@@ -113,7 +114,7 @@ public abstract class ImageWorker {
      * image is found in the memory cache, it is set immediately, otherwise an {@link AsyncTask}
      * will be created to asynchronously load the bitmap.
      *
-     * @param data The URL of the image to download.
+     * @param data      The URL of the image to download.
      * @param imageView The ImageView to bind the downloaded image to.
      */
     public void loadImage(Object data, ImageView imageView) {
@@ -121,7 +122,6 @@ public abstract class ImageWorker {
     }
 
     /**
-     *
      * @param data
      * @param listener
      * @author anshu
@@ -141,6 +141,32 @@ public abstract class ImageWorker {
             if (listener != null) {
                 listener.onImageDeleted(true);
             }
+        }
+
+    }
+
+    /**
+     *
+     * @param data
+     * @param listener
+     */
+    public void deleteImages(List<Object> data, OnImageDeletedListener listener) {
+        if (data == null) {
+            return;
+        }
+        for (Object d : data) {
+            BitmapDrawable value = null;
+            if (mImageCache != null) {
+                value = mImageCache.getBitmapFromMemCache(String.valueOf(data));
+            }
+
+            if (value != null) {
+                // Bitmap found in memory cache
+                mImageCache.clearCache(String.valueOf(data));
+            }
+        }
+        if (listener != null) {
+            listener.onImageDeleted(true);
         }
 
     }
@@ -166,11 +192,12 @@ public abstract class ImageWorker {
     /**
      * Adds an {@link ImageCache} to this {@link ImageWorker} to handle disk and memory bitmap
      * caching.
+     *
      * @param fragmentManager
-     * @param cacheParams The cache parameters to use for the image cache.
+     * @param cacheParams     The cache parameters to use for the image cache.
      */
     public void addImageCache(FragmentManager fragmentManager,
-            ImageCache.ImageCacheParams cacheParams) {
+                              ImageCache.ImageCacheParams cacheParams) {
         mImageCacheParams = cacheParams;
         mImageCache = ImageCache.getInstance(fragmentManager, mImageCacheParams);
         new CacheAsyncTask().execute(MESSAGE_INIT_DISK_CACHE);
@@ -179,9 +206,10 @@ public abstract class ImageWorker {
     /**
      * Adds an {@link ImageCache} to this {@link ImageWorker} to handle disk and memory bitmap
      * caching.
+     *
      * @param activity
      * @param diskCacheDirectoryName See
-     * {@link ImageCache.ImageCacheParams#ImageCacheParams(android.content.Context, String)}.
+     *                               {@link ImageCache.ImageCacheParams#ImageCacheParams(android.content.Context, String)}.
      */
     public void addImageCache(FragmentActivity activity, String diskCacheDirectoryName) {
         mImageCacheParams = new ImageCache.ImageCacheParams(activity, diskCacheDirectoryName);
@@ -207,7 +235,7 @@ public abstract class ImageWorker {
      * example, you could resize a large bitmap here, or pull down an image from the network.
      *
      * @param data The data to identify which image to process, as provided by
-     *            {@link ImageWorker#loadImage(Object, android.widget.ImageView)}
+     *             {@link ImageWorker#loadImage(Object, android.widget.ImageView)}
      * @return The processed bitmap
      */
     protected abstract Bitmap processBitmap(Object data);
@@ -221,6 +249,7 @@ public abstract class ImageWorker {
 
     /**
      * Cancels any pending work attached to the provided ImageView.
+     *
      * @param imageView
      */
     public static void cancelWork(ImageView imageView) {
@@ -315,7 +344,8 @@ public abstract class ImageWorker {
                 while (mPauseWork && !isCancelled()) {
                     try {
                         mPauseWorkLock.wait();
-                    } catch (InterruptedException e) {}
+                    } catch (InterruptedException e) {
+                    }
                 }
             }
 
@@ -421,6 +451,7 @@ public abstract class ImageWorker {
 
         /**
          * Called once the image has been loaded.
+         *
          * @param success True if the image was loaded successfully, false if
          *                there was an error.
          */
@@ -429,12 +460,14 @@ public abstract class ImageWorker {
 
     /**
      * Interface definition for callback on image deleted successfully.
+     *
      * @author anshu
      */
     public interface OnImageDeletedListener {
 
         /**
          * Called once the image has been deleted.
+         *
          * @param success True if the image was loaded successfully, false if
          *                there was an error.
          */
@@ -453,7 +486,7 @@ public abstract class ImageWorker {
         public AsyncDrawable(Resources res, Bitmap bitmap, BitmapWorkerTask bitmapWorkerTask) {
             super(res, bitmap);
             bitmapWorkerTaskReference =
-                new WeakReference<BitmapWorkerTask>(bitmapWorkerTask);
+                    new WeakReference<BitmapWorkerTask>(bitmapWorkerTask);
         }
 
         public BitmapWorkerTask getBitmapWorkerTask() {
@@ -462,7 +495,7 @@ public abstract class ImageWorker {
     }
 
     /**
-     * Called when the processing is complete and the final drawable should be 
+     * Called when the processing is complete and the final drawable should be
      * set on the ImageView.
      *
      * @param imageView
@@ -472,7 +505,7 @@ public abstract class ImageWorker {
         if (mFadeInBitmap) {
             // Transition drawable with a transparent drawable and the final drawable
             final TransitionDrawable td =
-                    new TransitionDrawable(new Drawable[] {
+                    new TransitionDrawable(new Drawable[]{
                             new ColorDrawable(android.R.color.transparent),
                             drawable
                     });
@@ -493,7 +526,7 @@ public abstract class ImageWorker {
      * be paused when a ListView or GridView is being scrolled using a
      * {@link android.widget.AbsListView.OnScrollListener} to keep
      * scrolling smooth.
-     * <p>
+     * <p/>
      * If work is paused, be sure setPauseWork(false) is called again
      * before your fragment or activity is destroyed (for example during
      * {@link android.app.Activity#onPause()}), or there is a risk the
@@ -512,7 +545,7 @@ public abstract class ImageWorker {
 
         @Override
         protected Void doInBackground(Object... params) {
-            switch ((Integer)params[0]) {
+            switch ((Integer) params[0]) {
                 case MESSAGE_CLEAR:
                     clearCacheInternal();
                     break;

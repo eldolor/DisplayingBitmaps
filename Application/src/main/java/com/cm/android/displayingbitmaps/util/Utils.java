@@ -20,6 +20,7 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.ThumbnailUtils;
 import android.os.Build;
 import android.os.Build.VERSION_CODES;
 import android.os.Environment;
@@ -277,16 +278,29 @@ public class Utils {
     public static boolean createThumbnail(Context context, String imageAbsolutePath, String thumbnailAbsolutePath, int thumbnailWidth, int thumbnailHeight) {
         BufferedInputStream bis = null;
         BufferedOutputStream bos = null;
-        Bitmap imageBitmap = null;
         try {
 
-            bis = new BufferedInputStream(new FileInputStream(imageAbsolutePath), Utils.IO_BUFFER_SIZE);
-            imageBitmap = BitmapFactory.decodeStream(bis);
-
-            imageBitmap = Bitmap.createScaledBitmap(imageBitmap, thumbnailWidth, thumbnailHeight, false);
-
+            //bis = new BufferedInputStream(new FileInputStream(imageAbsolutePath), Utils.IO_BUFFER_SIZE);
             bos = new BufferedOutputStream(new FileOutputStream(thumbnailAbsolutePath), Utils.IO_BUFFER_SIZE);
-            imageBitmap.compress(Bitmap.CompressFormat.JPEG, 100, bos);
+
+
+//            BitmapFactory.Options options = new BitmapFactory.Options();
+//            options.inJustDecodeBounds = true;
+//
+//            options.inSampleSize = ImageResizer.calculateInSampleSize(options, thumbnailWidth, thumbnailHeight);
+//
+//            Bitmap decodedBitmap = BitmapFactory.decodeStream(bis, null, options);
+//            if(decodedBitmap == null ){
+//                Log.e("createThumbnail", "image data could not be decoded.");
+//            }
+//
+//            Bitmap scaledBitmap = Bitmap.createScaledBitmap(decodedBitmap, thumbnailWidth, thumbnailHeight, false);
+//            scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 100, bos);
+//            Bitmap bMap = ThumbnailUtils.extractThumbnail(imageBitmap, thumbnailWidth, thumbnailHeight);
+//            bMap.compress(Bitmap.CompressFormat.JPEG, 100, bos);
+
+            Bitmap thumbnail = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(imageAbsolutePath), thumbnailWidth, thumbnailHeight);
+            thumbnail.compress(Bitmap.CompressFormat.JPEG, 100, bos);
 
             return true;
         } catch (Exception e) {
@@ -297,12 +311,12 @@ public class Utils {
                 if (bos != null) {
                     bos.flush();
                     bos.close();
-                    imageBitmap.recycle();
+                    //imageBitmap.recycle();
                 }
                 if (bis != null) {
                     bis.close();
                 }
-            } catch (final IOException e) {
+            } catch (final Exception e) {
             }
         }
 

@@ -22,6 +22,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.NavUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -47,6 +48,8 @@ import com.google.android.gms.analytics.HitBuilders;
 import com.google.android.gms.analytics.Tracker;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This fragment will populate the children of the ViewPager from {@link ImageDetailActivity}.
@@ -184,9 +187,32 @@ public class ImageDetailFragment extends Fragment implements ImageWorker.OnImage
                     public void onClick(DialogInterface dialog, int id) {
                         // Yes-code
                         mProgressBar.setVisibility(View.VISIBLE);
-                        String[] params = {mImageUrl, mThumbnailUrl};
-                        new DeleteImageAsyncTask().execute(params);
-                        getActivity().finish();
+                        //String[] params = {mImageUrl, mThumbnailUrl};
+                        //new DeleteImageAsyncTask().execute(params);
+
+                        try {
+                            //delete files under Pictures
+                            File imageFile = new File(mImageUrl);
+                            File thumbnailFile = new File(mThumbnailUrl);
+                            //delete thumbnail first for better ux
+                            if (thumbnailFile.delete() && imageFile.delete()) {
+                                List<Object> data = new ArrayList<Object>();
+                                //delete thumbnail first
+                                data.add(mThumbnailUrl);
+                                data.add(mImageUrl);
+                                //delete files in the cache
+                                mImageFetcher.deleteImages(data, ImageDetailFragment.this);
+                            } else {
+                                Log.e(ImageDetailFragment.class.getName(), "Unable to delete files");
+                                Toast.makeText(getActivity(), "Unable to delete",
+                                        Toast.LENGTH_SHORT).show();
+                            }
+
+                        } catch (Exception e) {
+                            Log.e(ImageDetailFragment.class.getName(), e.getMessage());
+                        }
+
+                        //getActivity().finish();
                     }
                 })
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -224,17 +250,25 @@ public class ImageDetailFragment extends Fragment implements ImageWorker.OnImage
             String mImageThumbnailUrl = strings[1];
 
             try {
-                File file = new File(mImageUrl);
-                if (file.delete()) {
-                    mImageFetcher.deleteImage(mImageUrl, ImageDetailFragment.this);
-                    mImageFetcher.deleteImage(mImageThumbnailUrl, ImageDetailFragment.this);
+                //delete files under Pictures
+                File imageFile = new File(mImageUrl);
+                File thumbnailFile = new File(mImageUrl);
+                //delete thumbnail first for better ux
+                if (thumbnailFile.delete() && imageFile.delete()) {
+                    List<Object> data = new ArrayList<Object>();
+                    //delete thumbnail first
+                    data.add(mImageThumbnailUrl);
+                    data.add(mImageUrl);
+                    //delete files in the cache
+                    mImageFetcher.deleteImages(data, ImageDetailFragment.this);
                 } else {
+                    Log.e(ImageDetailFragment.class.getName(), "Unable to delete files");
                     Toast.makeText(getActivity(), "Unable to delete",
                             Toast.LENGTH_SHORT).show();
                 }
 
             } catch (Exception e) {
-
+                Log.e(ImageDetailFragment.class.getName(), e.getMessage());
             }
 
 
